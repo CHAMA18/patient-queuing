@@ -1,0 +1,291 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ------------------------------------------------------------------ */
+/* Moms Care Flow — Material Design 3 palette (ported from mockup)     */
+/* ------------------------------------------------------------------ */
+@theme {
+  /* Core scheme */
+  --color-surface: #e8fef8;
+  --color-surface-variant: #d1e7e1;
+  --color-surface-dim: #c9dfd8;
+  --color-surface-bright: #e8fef8;
+  --color-surface-tint: #006a63;
+  --color-surface-container: #ddf3ec;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #e2f8f2;
+  --color-surface-container-high: #d7ede7;
+  --color-surface-container-highest: #d1e7e1;
+
+  --color-primary-container: #0f766e;
+  --color-on-primary-container: #a3faef;
+  --color-on-primary: #ffffff;
+  --color-primary-fixed: #9cf2e8;
+  --color-primary-fixed-dim: #80d5cb;
+  --color-on-primary-fixed: #00201d;
+  --color-on-primary-fixed-variant: #00504a;
+
+  --color-secondary-container: #c3eae4;
+  --color-on-secondary-container: #476b66;
+  --color-on-secondary: #ffffff;
+  --color-secondary-fixed: #c3eae4;
+  --color-secondary-fixed-dim: #a8cec8;
+  --color-on-secondary-fixed: #00201d;
+  --color-on-secondary-fixed-variant: #294d49;
+
+  --color-tertiary: #7e4126;
+  --color-tertiary-container: #9b583b;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #ffe5dc;
+  --color-tertiary-fixed: #ffdbce;
+  --color-tertiary-fixed-dim: #ffb598;
+  --color-on-tertiary-fixed: #370e00;
+  --color-on-tertiary-fixed-variant: #71361d;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-outline: #6e7977;
+  --color-outline-variant: #bdc9c6;
+  --color-inverse-surface: #213430;
+  --color-inverse-on-surface: #dff6ef;
+  --color-inverse-primary: #80d5cb;
+
+  /* Typography families (variables injected by next/font) */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display-lg: var(--font-plus-jakarta), ui-sans-serif, sans-serif;
+  --font-display-lg-mobile: var(--font-plus-jakarta), ui-sans-serif, sans-serif;
+  --font-headline-lg: var(--font-plus-jakarta), ui-sans-serif, sans-serif;
+  --font-headline-lg-mobile: var(--font-plus-jakarta), ui-sans-serif, sans-serif;
+  --font-headline-md: var(--font-plus-jakarta), ui-sans-serif, sans-serif;
+  --font-headline-sm: var(--font-plus-jakarta), ui-sans-serif, sans-serif;
+  --font-title-md: var(--font-manrope), ui-sans-serif, sans-serif;
+  --font-body-lg: var(--font-inter), ui-sans-serif, sans-serif;
+  --font-body-md: var(--font-inter), ui-sans-serif, sans-serif;
+  --font-body-sm: var(--font-inter), ui-sans-serif, sans-serif;
+  --font-label-lg: var(--font-manrope), ui-sans-serif, sans-serif;
+  --font-label-md: var(--font-manrope), ui-sans-serif, sans-serif;
+  --font-label-numeric: var(--font-manrope), ui-sans-serif, sans-serif;
+
+  /* Typography sizes (weight / line-height / letter-spacing included) */
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 56px;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-display-lg--font-weight: 700;
+  --text-display-lg-mobile: 36px;
+  --text-display-lg-mobile--line-height: 44px;
+  --text-display-lg-mobile--letter-spacing: -0.015em;
+  --text-display-lg-mobile--font-weight: 700;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--letter-spacing: -0.015em;
+  --text-headline-lg--font-weight: 600;
+  --text-headline-lg-mobile: 26px;
+  --text-headline-lg-mobile--line-height: 34px;
+  --text-headline-lg-mobile--letter-spacing: -0.01em;
+  --text-headline-lg-mobile--font-weight: 600;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--letter-spacing: -0.01em;
+  --text-headline-md--font-weight: 600;
+  --text-headline-sm: 20px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--font-weight: 600;
+  --text-title-md: 16px;
+  --text-title-md--line-height: 24px;
+  --text-title-md--font-weight: 600;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-lg--font-weight: 400;
+  --text-body-md: 15px;
+  --text-body-md--line-height: 22px;
+  --text-body-md--font-weight: 400;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 18px;
+  --text-body-sm--font-weight: 400;
+  --text-label-lg: 14px;
+  --text-label-lg--line-height: 20px;
+  --text-label-lg--letter-spacing: 0.01em;
+  --text-label-lg--font-weight: 600;
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.02em;
+  --text-label-md--font-weight: 600;
+  --text-label-numeric: 28px;
+  --text-label-numeric--line-height: 32px;
+  --text-label-numeric--letter-spacing: -0.02em;
+  --text-label-numeric--font-weight: 700;
+
+  /* Micro spacing scale used across the dashboard */
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #e8fef8;
+  --foreground: #0c1f1b;
+  --card: #ffffff;
+  --card-foreground: #0c1f1b;
+  --popover: #ffffff;
+  --popover-foreground: #0c1f1b;
+  --primary: #005c55;
+  --primary-foreground: #ffffff;
+  --secondary: #416560;
+  --secondary-foreground: #ffffff;
+  --muted: #ddf3ec;
+  --muted-foreground: #3e4947;
+  --accent: #ddf3ec;
+  --accent-foreground: #0c1f1b;
+  --destructive: #ba1a1a;
+  --border: #bdc9c6;
+  --input: #bdc9c6;
+  --ring: #005c55;
+  --chart-1: #005c55;
+  --chart-2: #416560;
+  --chart-3: #7e4126;
+  --chart-4: #0f766e;
+  --chart-5: #9b583b;
+  --sidebar: #e2f8f2;
+  --sidebar-foreground: #0c1f1b;
+  --sidebar-primary: #0f766e;
+  --sidebar-primary-foreground: #a3faef;
+  --sidebar-accent: #ddf3ec;
+  --sidebar-accent-foreground: #0c1f1b;
+  --sidebar-border: #bdc9c6;
+  --sidebar-ring: #005c55;
+}
+
+.dark {
+  --background: #0c1f1b;
+  --foreground: #e8fef8;
+  --card: #213430;
+  --card-foreground: #e8fef8;
+  --popover: #213430;
+  --popover-foreground: #e8fef8;
+  --primary: #80d5cb;
+  --primary-foreground: #00201d;
+  --secondary: #294d49;
+  --secondary-foreground: #e8fef8;
+  --muted: #213430;
+  --muted-foreground: #a8cec8;
+  --accent: #294d49;
+  --accent-foreground: #e8fef8;
+  --destructive: #ffdad6;
+  --border: #294d49;
+  --input: #294d49;
+  --ring: #80d5cb;
+  --sidebar: #213430;
+  --sidebar-foreground: #e8fef8;
+  --sidebar-primary: #80d5cb;
+  --sidebar-primary-foreground: #00201d;
+  --sidebar-accent: #294d49;
+  --sidebar-accent-foreground: #e8fef8;
+  --sidebar-border: #294d49;
+  --sidebar-ring: #80d5cb;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    @apply bg-background text-foreground;
+    overscroll-behavior: none;
+  }
+}
+
+/* Material Symbols (defensive base rule; font comes from Google stylesheet) */
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined", sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hide scrollbars while keeping scroll (per mockup) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Thin styled scrollbar for list panels */
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: #bdc9c6;
+  border-radius: 9999px;
+}
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Chitenge-inspired dotted divider used under the sidebar brand */
+.chitenge-dots {
+  background-image: radial-gradient(#005c55 1px, transparent 1px);
+  background-size: 6px 6px;
+}
