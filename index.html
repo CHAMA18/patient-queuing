@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#9e1d24" />
+    <title>Mum’s Care · Hospital Flow</title>
+    <link rel="preload" href="/fonts/satoshi-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/shell.css" />
+    <link rel="stylesheet" href="/auth.css" />
+    <link rel="icon" type="image/png" href="/mums-care-logo.png" />
+  </head>
+  <body>
+    <div class="app-boot" id="app-boot" role="status" aria-live="polite">
+      <img src="/mums-care-logo.png" alt="Mum’s Care Hospital" />
+      <span class="app-boot-spinner" aria-hidden="true"></span>
+      <span>Opening your secure care workspace…</span>
+    </div>
+    <main id="auth-root" hidden></main>
+    <div class="workspace-shell" id="workspace-shell" hidden>
+      <aside class="workspace-sidebar" aria-label="Mum’s Care workspace navigation">
+        <div class="workspace-sidebar-head">
+          <div class="workspace-sidebar-top">
+            <a class="workspace-brand" href="?screen=hospital-command-centre" data-screen="hospital-command-centre" aria-label="Mum’s Care Hospital Command Centre">
+              <span class="workspace-brand-logo-plate"><img class="workspace-brand-logo" src="/mums-care-logo.png" alt="Mum’s Care Hospital" /></span>
+              <span class="workspace-compact-mark" aria-hidden="true">MC</span>
+            </a>
+            <button class="workspace-collapse-button" id="sidebar-toggle" type="button" aria-label="Collapse sidebar" aria-expanded="true" title="Collapse sidebar">
+              <span class="material-symbols-outlined" id="sidebar-toggle-icon" aria-hidden="true">left_panel_close</span>
+            </button>
+          </div>
+          <div class="workspace-context"><span class="workspace-context-line"></span><span>CARE TEAM WORKSPACE</span></div>
+        </div>
+        <nav class="workspace-nav" id="workspace-nav" aria-label="Main navigation"></nav>
+        <div class="workspace-sidebar-tools" aria-label="Workspace actions">
+          <button class="workspace-tool-button" id="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" title="Appearance">
+            <span class="material-symbols-outlined workspace-tool-icon" id="theme-icon" aria-hidden="true">dark_mode</span>
+            <span class="workspace-tool-label"><strong>Appearance</strong><small id="theme-mode-label">Light mode</small></span>
+          </button>
+          <button class="workspace-tool-button workspace-logout-button" id="logout-button" type="button" aria-label="Sign out" title="Sign out">
+            <span class="material-symbols-outlined workspace-tool-icon" aria-hidden="true">logout</span>
+            <span class="workspace-tool-label"><strong>Sign out</strong><small>Sign out of your account</small></span>
+          </button>
+        </div>
+        <footer class="workspace-sidebar-footer">
+          <span class="workspace-footer-mark">MC</span>
+          <span><strong>Mum’s Care</strong><small>Care workspace</small></span>
+        </footer>
+      </aside>
+      <main class="screen-stage" id="screen-stage">
+        <div id="screen-root"></div>
+      </main>
+    </div>
+
+    <noscript>This care workspace needs JavaScript enabled to connect to live facility data.</noscript>
+    <script type="module" src="/app.ts"></script>
+  </body>
+</html>

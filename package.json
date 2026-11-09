@@ -1,0 +1,39 @@
+{
+  "name": "hospital-flow-command-center",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n API,UI \"npm:dev:api\" \"npm:dev:ui\"",
+    "dev:api": "tsx watch server/index.ts",
+    "dev:ui": "vite --host 127.0.0.1 --port 4173",
+    "build": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.server.json && vite build",
+    "start": "node dist-server/server/index.js",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "db:migrate": "tsx server/migrate.ts",
+    "db:up": "brew services start postgresql@18",
+    "db:down": "brew services stop postgresql@18",
+    "db:status": "brew services info postgresql@18",
+    "db:compose:up": "docker compose up -d db",
+    "db:compose:down": "docker compose down",
+    "db:compose:status": "docker compose ps db",
+    "db:compose:logs": "docker compose logs -f db"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
+    "concurrently": "^10.0.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.3",
+    "helmet": "^8.3.0",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  }
+}
