@@ -92,6 +92,7 @@ const registerSchema = z.object({
   inviteCode: z.string().trim().max(160).optional().default(""),
   jobTitle: z.string().trim().min(2).max(80),
   password: z.string().min(10).max(256).regex(/(?=.*[0-9])/, "Password must contain a number."),
+  accountType: z.enum(["admin", "staff"]).optional(),
 });
 
 const checkInSchema = z.object({
@@ -320,6 +321,9 @@ app.post("/api/auth/register", loginLimit, asyncRoute(async (req, res) => {
   const email = input.email.toLocaleLowerCase("en");
   const facilityName = input.facilityName.trim().replace(/\s+/g, " ");
   const normalizedName = facilityName ? normalizeFacilityName(facilityName) : "";
+  if (!input.inviteCode && input.accountType === "staff") {
+    throw new ApiError(403, "INVITE_CODE_REQUIRED", "Staff accounts join an existing team. Enter your team invite code, or register as Admin to create a facility.");
+  }
   if (!input.inviteCode && facilityName.length < 2) {
     throw new ApiError(400, "FACILITY_NAME_REQUIRED", "Enter a facility name to create a new workspace, or use an invite code to join an existing team.");
   }
@@ -343,6 +347,13 @@ app.post("/api/auth/register", loginLimit, asyncRoute(async (req, res) => {
         throw new ApiError(403, "INVITE_CODE_REQUIRED", "Ask your facility administrator for a valid team invite code.");
       }
       accountRole = invitation.rows[0]!.accountRole;
+      if (input.accountType) {
+        const inviteIsAdmin = accountRole === "admin";
+        if ((input.accountType === "admin") !== inviteIsAdmin) {
+          const expected = inviteIsAdmin ? "Admin" : "Staff";
+          throw new ApiError(403, "ACCOUNT_TYPE_MISMATCH", `That invite code joins the ${expected} workspace. Switch to ${expected} to continue.`);
+        }
+      }
       facility = await client.query<{ id: string; invite_code_hash: string }>(
         "SELECT id, invite_code_hash FROM facilities WHERE id = $1",
         [invitation.rows[0]!.facilityId],
