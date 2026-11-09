@@ -79,6 +79,20 @@ function formMarkup(mode: AuthMode): string {
   }
   return `<div class="auth-heading auth-heading-register"><span class="auth-eyebrow">CARE TEAM ACCESS</span><h1 id="auth-title">Create your workspace</h1><p>Start a new facility workspace or join your team with an invite code.</p></div>
     <form class="auth-form auth-register-form" id="register-form">
+      <fieldset class="auth-role-picker" aria-describedby="register-role-description">
+        <legend>I’m registering as</legend>
+        <div class="auth-role-options">
+          <label class="auth-role-option">
+            <input type="radio" name="accountType" value="staff"/>
+            <span class="auth-role-option-surface"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="7.5" r="3.5"/><path d="M16 4.2a3.5 3.5 0 0 1 0 6.6M20 20v-1.5a3.5 3.5 0 0 0-2.5-3.35"/></svg><span class="auth-role-copy"><strong>Staff</strong><small>Care team</small></span><span class="auth-role-selected" aria-hidden="true"></span></span>
+          </label>
+          <label class="auth-role-option">
+            <input type="radio" name="accountType" value="admin" checked/>
+            <span class="auth-role-option-surface"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19 6v5c0 4.5-2.9 8-7 10-4.1-2-7-5.5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/></svg><span class="auth-role-copy"><strong>Admin</strong><small>Facility admin</small></span><span class="auth-role-selected" aria-hidden="true"></span></span>
+          </label>
+        </div>
+        <p class="auth-role-description" id="register-role-description" aria-live="polite">Create a new facility workspace and manage operations and team access.</p>
+      </fieldset>
       ${field("register-name", "Full name", "fullName", "text", "Your name", "name")}
       ${field("register-email", "Work email", "email", "email", "you@facility.org", "email")}
       ${field("register-facility", "Facility name", "facilityName", "text", "Only needed when creating a facility", "organization", false)}
@@ -181,18 +195,41 @@ function wireRegistration(root: HTMLElement, onAuthenticated: (result: Authentic
   const inviteCode = root.querySelector<HTMLInputElement>("#register-invite-code");
   const facilityName = root.querySelector<HTMLInputElement>("#register-facility");
   const facilityNote = root.querySelector<HTMLElement>("#register-facility-note");
-  const syncFacilityRequirement = (): void => {
-    if (!facilityName) return;
+  const roleDescription = root.querySelector<HTMLElement>("#register-role-description");
+  const selectedRole = (): "admin" | "staff" => form?.querySelector<HTMLInputElement>('input[name="accountType"]:checked')?.value === "admin" ? "admin" : "staff";
+  const submitLabel = (): string => `Create ${selectedRole() === "admin" ? "Admin" : "Staff"} account`;
+  const syncFormMode = (): void => {
+    const admin = selectedRole() === "admin";
     const joiningTeam = Boolean(inviteCode?.value.trim());
-    facilityName.required = !joiningTeam;
-    facilityName.setAttribute("aria-required", String(!joiningTeam));
-    facilityName.placeholder = joiningTeam ? "Optional when joining a team" : "Your care facility";
-    if (facilityNote) facilityNote.textContent = joiningTeam
-      ? "Joining with an invite code? You can leave this blank."
-      : "Required when creating a new facility. Enter an invite code to join a team.";
+    if (inviteCode) {
+      inviteCode.required = !admin;
+      inviteCode.setAttribute("aria-required", String(!admin));
+      inviteCode.placeholder = admin ? "Leave blank to create your facility" : "Enter your team invite code";
+    }
+    if (facilityName) {
+      const required = admin || !joiningTeam;
+      facilityName.required = required;
+      facilityName.setAttribute("aria-required", String(required));
+      facilityName.placeholder = admin ? "Your care facility" : "Optional when joining a team";
+    }
+    if (facilityNote) {
+      facilityNote.textContent = admin
+        ? "You will be the administrator of this facility workspace."
+        : joiningTeam
+          ? "Joining with an invite code? You can leave this blank."
+          : "Required when creating a new facility. Enter an invite code to join a team.";
+    }
+    if (roleDescription) {
+      roleDescription.textContent = admin
+        ? "Create a new facility workspace and manage operations and team access."
+        : "Join your care team workspace with the invite code from your administrator.";
+    }
+    const submitSpan = form?.querySelector<HTMLButtonElement>(".auth-submit span");
+    if (submitSpan) submitSpan.textContent = submitLabel();
   };
-  inviteCode?.addEventListener("input", syncFacilityRequirement);
-  syncFacilityRequirement();
+  form?.querySelectorAll<HTMLInputElement>('input[name="accountType"]').forEach((input) => input.addEventListener("change", syncFormMode));
+  inviteCode?.addEventListener("input", syncFormMode);
+  syncFormMode();
   const password = root.querySelector<HTMLInputElement>("#register-password");
   const confirmPassword = root.querySelector<HTMLInputElement>("#register-confirm-password");
   password?.addEventListener("input", () => {
@@ -208,6 +245,8 @@ function wireRegistration(root: HTMLElement, onAuthenticated: (result: Authentic
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(form);
+    const rolePicker = form.querySelector<HTMLFieldSetElement>(".auth-role-picker");
+    if (rolePicker) rolePicker.disabled = true;
     setSubmitting(form, true, "Creating your account…");
     try {
       const result = await postJson<AuthenticatedResult>("/api/auth/register", {
@@ -217,10 +256,12 @@ function wireRegistration(root: HTMLElement, onAuthenticated: (result: Authentic
         facilityName: String(data.get("facilityName") ?? ""),
         inviteCode: String(data.get("inviteCode") ?? ""),
         jobTitle: String(data.get("jobTitle") ?? ""),
+        accountType: selectedRole(),
       });
       onAuthenticated(result);
     } catch (error) {
-      setSubmitting(form, false, "Create secure account");
+      if (rolePicker) rolePicker.disabled = false;
+      setSubmitting(form, false, submitLabel());
       showFeedback(root, getErrorMessage(error), "error");
       if (error && typeof error === "object" && "code" in error && error.code === "INVITE_CODE_REQUIRED") {
         root.querySelector<HTMLInputElement>("#register-invite-code")?.focus();
