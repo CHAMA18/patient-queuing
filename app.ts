@@ -509,6 +509,28 @@ function formatDepartment(value: string): string {
   return departmentLabels[value as Department] ?? value.replaceAll("_", " ");
 }
 
+function formatWait(minutes: unknown): { short: string; title: string; aria: string; tone: "quiet" | "watch" | "long" } {
+  const total = Math.max(0, Math.round(numberValue(minutes)));
+  const days = Math.floor(total / 1440);
+  const hours = Math.floor((total % 1440) / 60);
+  const mins = total % 60;
+  const short = days > 0
+    ? `${days} d ${hours} h`
+    : hours > 0
+      ? (mins > 0 ? `${hours} h ${mins} m` : `${hours} h`)
+      : total > 0 ? `${mins} min` : "Just now";
+  const spoken: string[] = [];
+  if (days) spoken.push(`${days} day${days === 1 ? "" : "s"}`);
+  if (hours) spoken.push(`${hours} hour${hours === 1 ? "" : "s"}`);
+  if (!days && mins) spoken.push(`${mins} minute${mins === 1 ? "" : "s"}`);
+  return {
+    short,
+    title: `${total.toLocaleString("en-ZM")} ${total === 1 ? "minute" : "minutes"} in this queue`,
+    aria: `Waiting ${spoken.length ? spoken.join(" ") : "less than a minute"}`,
+    tone: total >= 180 ? "long" : total >= 60 ? "watch" : "quiet",
+  };
+}
+
 function pageHeading(screen: StitchScreen, tag = "CARE FLOW"): string {
   if (screen.slug === "hospital-command-centre") return "";
   return `<div class="page-heading"><div><div class="page-kicker"><span></span>${escapeHtml(tag)}</div><h1>${escapeHtml(screen.title)}</h1><p>${escapeHtml(screen.description)}</p></div><div class="page-heading-actions"><button class="icon-action" type="button" data-refresh aria-label="Refresh data" title="Refresh data"><span class="material-symbols-outlined" aria-hidden="true">refresh</span></button></div></div>`;
@@ -533,7 +555,7 @@ function priorityTag(priority: QueueEntry["priority"]): string {
 
 function statusTag(status: QueueStatus): string {
   const label: Record<QueueStatus, string> = { waiting: "Waiting", called: "Called", in_progress: "In progress", completed: "Completed", cancelled: "Cancelled" };
-  return `<span class="status-tag status-${status}">${label[status]}</span>`;
+  return `<span class="status-tag status-${status}"><i aria-hidden="true"></i>${label[status]}</span>`;
 }
 
 function queueRow(entry: QueueEntry, staff: StaffMember[], options: { showDepartment?: boolean; actions?: boolean } = {}): string {
@@ -542,17 +564,27 @@ function queueRow(entry: QueueEntry, staff: StaffMember[], options: { showDepart
     ? departmentOrder.filter((department) => department !== entry.department)
     : DEPARTMENT_HANDOFFS[entry.department];
   const canCompleteVisit = currentUser?.accountRole === "admin" || VISIT_COMPLETION_DEPARTMENTS.includes(entry.department);
+  const wait = formatWait(entry.waitMinutes);
+  const assignControl = eligibleStaff.length > 0
+    ? `<select class="assign-select${entry.assignedUserId ? " is-assigned" : ""}" data-assign-entry="${escapeHtml(entry.id)}" aria-label="Assign ticket ${escapeHtml(entry.ticketNumber)} to a care team member"><option value="">Unassigned</option>${eligibleStaff.map((member) => `<option value="${escapeHtml(member.id)}" ${member.id === entry.assignedUserId ? "selected" : ""}>${escapeHtml(member.fullName)} · ${escapeHtml(ACCOUNT_ROLE_DEFINITIONS[member.accountRole].label)}</option>`).join("")}</select>`
+    : `<span class="queue-assign is-empty" aria-hidden="true"></span>`;
+  const completeControl = entry.status === "in_progress" && canCompleteVisit
+    ? `<button class="button button-small button-quiet queue-action-complete" data-queue-action="complete" data-entry-id="${escapeHtml(entry.id)}" aria-label="Complete visit for ticket ${escapeHtml(entry.ticketNumber)}" title="Complete visit"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span class="queue-action-complete-label">Complete visit</span></button>`
+    : `<span class="queue-action-complete is-empty" aria-hidden="true"></span>`;
   const controls = options.actions === false ? "" : `<div class="queue-actions">
-    ${entry.status === "waiting" ? `<button class="button button-small button-secondary" data-queue-action="call" data-entry-id="${escapeHtml(entry.id)}" aria-label="Call ticket ${escapeHtml(entry.ticketNumber)}">Call</button>` : ""}
-    ${entry.status === "called" ? `<button class="button button-small button-primary" data-queue-action="start" data-entry-id="${escapeHtml(entry.id)}" aria-label="Start ticket ${escapeHtml(entry.ticketNumber)}">Start</button>` : ""}
-    ${entry.status === "in_progress" ? `<div class="move-control">${nextDepartments.length ? `<select aria-label="Next department for ticket ${escapeHtml(entry.ticketNumber)}" data-next-department="${escapeHtml(entry.id)}"><option value="">Next step…</option>${nextDepartments.map((department) => `<option value="${department}">${escapeHtml(departmentLabels[department])}</option>`).join("")}</select><button class="button button-small button-secondary" data-queue-action="advance" data-entry-id="${escapeHtml(entry.id)}" aria-label="Move ticket ${escapeHtml(entry.ticketNumber)} to the selected department">Move</button>` : ""}${canCompleteVisit ? `<button class="button button-small button-quiet" data-queue-action="complete" data-entry-id="${escapeHtml(entry.id)}" aria-label="Complete visit for ticket ${escapeHtml(entry.ticketNumber)}">Complete visit</button>` : ""}</div>` : ""}
-    ${eligibleStaff.length > 0 ? `<select class="assign-select" data-assign-entry="${escapeHtml(entry.id)}" aria-label="Assign ticket ${escapeHtml(entry.ticketNumber)} to a care team member"><option value="">Unassigned</option>${eligibleStaff.map((member) => `<option value="${escapeHtml(member.id)}" ${member.id === entry.assignedUserId ? "selected" : ""}>${escapeHtml(member.fullName)} · ${escapeHtml(ACCOUNT_ROLE_DEFINITIONS[member.accountRole].label)}</option>`).join("")}</select>` : ""}
+    <div class="queue-action-primary">
+      ${entry.status === "waiting" ? `<button class="button button-small button-primary" data-queue-action="call" data-entry-id="${escapeHtml(entry.id)}" aria-label="Call ticket ${escapeHtml(entry.ticketNumber)}"><span class="material-symbols-outlined" aria-hidden="true">record_voice_over</span>Call</button>` : ""}
+      ${entry.status === "called" ? `<button class="button button-small button-primary" data-queue-action="start" data-entry-id="${escapeHtml(entry.id)}" aria-label="Start ticket ${escapeHtml(entry.ticketNumber)}"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>Start</button>` : ""}
+      ${entry.status === "in_progress" && nextDepartments.length ? `<div class="move-control"><select aria-label="Next department for ticket ${escapeHtml(entry.ticketNumber)}" data-next-department="${escapeHtml(entry.id)}"><option value="">Next step…</option>${nextDepartments.map((department) => `<option value="${department}">${escapeHtml(departmentLabels[department])}</option>`).join("")}</select><button class="button button-small button-secondary" data-queue-action="advance" data-entry-id="${escapeHtml(entry.id)}" aria-label="Move ticket ${escapeHtml(entry.ticketNumber)} to the selected department"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Move</button></div>` : ""}
+    </div>
+    ${completeControl}
+    ${assignControl}
   </div>`;
-  return `<article class="queue-row" data-status="${entry.status}"><div class="queue-person"><span class="queue-avatar" aria-hidden="true">${escapeHtml(initials(`${entry.firstName} ${entry.lastName}`))}</span><div><strong>${escapeHtml(entry.firstName)} ${escapeHtml(entry.lastName)}</strong><small>${escapeHtml(entry.ticketNumber)}${options.showDepartment ? ` · ${escapeHtml(formatDepartment(entry.department))}` : ""}</small></div></div><div class="queue-meta">${priorityTag(entry.priority)}${statusTag(entry.status)}<span class="queue-wait">${Number(entry.waitMinutes) || 0} min</span></div>${controls}</article>`;
+  return `<article class="queue-row" role="listitem" data-status="${entry.status}"><div class="queue-person"><span class="queue-avatar" aria-hidden="true">${escapeHtml(initials(`${entry.firstName} ${entry.lastName}`))}</span><div><strong>${escapeHtml(entry.firstName)} ${escapeHtml(entry.lastName)}</strong><small><span class="queue-ticket">${escapeHtml(entry.ticketNumber)}</span>${options.showDepartment ? `<span class="queue-ticket-divider" aria-hidden="true">·</span>${escapeHtml(formatDepartment(entry.department))}` : ""}</small></div></div><div class="queue-meta"><span class="queue-wait queue-wait-${wait.tone}" title="${escapeHtml(wait.title)}" aria-label="${escapeHtml(wait.aria)}"><span class="material-symbols-outlined" aria-hidden="true">schedule</span>${escapeHtml(wait.short)}</span>${priorityTag(entry.priority)}${statusTag(entry.status)}</div>${controls}</article>`;
 }
 
-function queuePanel(title: string, entries: QueueEntry[], staff: StaffMember[], options: { showDepartment?: boolean; actions?: boolean; detail?: string; metricCard?: boolean; live?: boolean; total?: number } = {}): string {
-  return `<section class="panel${options.metricCard ? " active-patient-flow-card" : ""}"><div class="panel-heading"><div><h2>${escapeHtml(title)}</h2>${options.detail ? `<p>${escapeHtml(options.detail)}</p>` : ""}</div><div class="panel-heading-meta">${options.live ? `<span class="live-pill"><i></i> LIVE</span>` : ""}<span class="panel-count">${options.total ?? entries.length}</span></div></div>${entries.length ? `<div class="queue-list">${entries.map((entry) => queueRow(entry, staff, options)).join("")}</div>` : emptyState("No patients in this queue", "New check-ins will appear here as soon as they are registered.")}</section>`;
+function queuePanel(title: string, entries: QueueEntry[], staff: StaffMember[], options: { showDepartment?: boolean; actions?: boolean; detail?: string; metricCard?: boolean; live?: boolean; total?: number; workstation?: boolean } = {}): string {
+  return `<section class="panel${options.metricCard ? " active-patient-flow-card" : ""}${options.workstation ? " queue-panel-workstation" : ""}"><div class="panel-heading"><div><h2>${escapeHtml(title)}</h2>${options.detail ? `<p>${escapeHtml(options.detail)}</p>` : ""}</div><div class="panel-heading-meta">${options.live ? `<span class="live-pill"><i></i> LIVE</span>` : ""}<span class="panel-count">${options.total ?? entries.length}</span></div></div>${entries.length ? `<div class="queue-list" role="list">${entries.map((entry) => queueRow(entry, staff, options)).join("")}</div>` : emptyState("No patients in this queue", "New check-ins will appear here as soon as they are registered.")}</section>`;
 }
 
 function queuePager(page: QueuePage, department: Department): string {
@@ -975,7 +1007,7 @@ function renderClinicalQueue(screen: StitchScreen, department: Department, page:
     : "";
   return `${pageHeading(screen, `${departmentLabels[department].toLocaleUpperCase("en")} WORKSTATION`)}<section class="metric-grid metric-grid-compact">${metric("Waiting", waiting, "hourglass_top", "amber", "Ready for the next step")}${metric("Called", called, "record_voice_over", "blue", "Awaiting staff")}${metric("In progress", inProgress, "health_and_safety", "teal", "Currently being served")}</section>
     ${renderCareFlow(department)}${workflowStrip}
-    ${queuePanel(`${departmentLabels[department]} queue`, entries, staff, { detail: workflowInstructions[department], total: page.total })}${queuePager(page, department)}`;
+    ${queuePanel(`${departmentLabels[department]} queue`, entries, staff, { detail: workflowInstructions[department], total: page.total, workstation: true })}${queuePager(page, department)}`;
 }
 
 function renderVitalsWorkstation(page: QueuePage): string {
