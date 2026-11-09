@@ -1,6 +1,7 @@
 node_modules/
-.next/
-db/
-*.log
-.env*
-.DS_Store
+dist/
+dist-server/
+.env
+.env.*
+!.env.example
+.postgres-data/

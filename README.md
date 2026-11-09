@@ -1,65 +1,51 @@
-# Moms Care Flow — Patient Queuing & Flow Management
+# Mum’s Care · Hospital Flow Command Centre
 
-A full-stack **patient queuing and hospital flow command centre** for the Maternity & Paediatric wing of **Lusaka Central Hospital** (Zambia, CAT timezone). Built with Next.js 16, TypeScript, Tailwind CSS 4, shadcn/ui, Prisma (SQLite) and Socket.IO.
+TypeScript web application for coordinating patient flow at a care facility. The UI reads and writes PostgreSQL-backed records through the Express API. The database starts empty; no demo accounts, patients, messages or queue entries are inserted.
 
-> All times in the app are rendered in Central Africa Time (Africa/Lusaka, UTC+2).
+## Requirements
 
-## Modules
+- Node.js 22 or later
+- PostgreSQL 18
 
-| Module | What it does |
-| --- | --- |
-| **Overview / Hospital Command Centre** | Live KPIs (registered, waiting, attended, completed, avg wait, longest queue), Living Patient Flow Map with per-department throughput, Bottleneck Radar with actionable alerts, Live Queue Movement feed, quick command actions, daily CSV report export |
-| **OPD Reception** | Register mothers/children, auto ticketing (`MC-0xx`), lounge & seat assignment, today's registration log |
-| **Vitals Station** | 3 triage bays, call-next FIFO with priority override, vitals capture (BP, weight, temp, pulse, fetal doppler), **auto red-flag rules** (BP ≥ 160/100 or fever ≥ 38.5 °C → Priority Red + expedited routing) |
-| **Consultation Room** | Rooms 01–05 + sonography bay, session timers with overrun warnings, order lab panels, raise prescriptions, advice-only discharge |
-| **Laboratory** | Specimen queue & processing benches, result capture, **auto-recall to Consultation Room 01** when results are ready |
-| **Pharmacy** | Dispensing windows 1–2, prescription handover, visit completion with dwell time |
-| **Waiting TV Displays** | Full-screen "NOW SERVING" board for lounge TVs — live calls per room/bay/window, up-next tickets per stage, big CAT clock, ticker |
-| **Hospital Flow Settings** | Flow targets & capacity thresholds, staff roster management, one-click demo-day reset |
+## Run locally
 
-## Patient journey
+Start PostgreSQL and create the application database and user. For a local Homebrew installation, the configured defaults use the local PostgreSQL socket and database name `patient_flow`:
 
-```
-REGISTRATION → VITALS → CONSULTATION → (LAB → REVIEW)? → PHARMACY → COMPLETED
+```sh
+npm install
+npm run db:up
+npm run db:migrate
+npm run dev
 ```
 
-Every transition writes an audit event, which powers the live feed, the full audit trail and the daily report.
+Open the Vite URL printed by the command (normally [http://127.0.0.1:4173](http://127.0.0.1:4173)). The development server runs the API on port 3001 and proxies `/api` requests to it. Set `DATABASE_URL` or `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD` to connect to another PostgreSQL instance.
 
-## Live updates
+The first registration for a new facility creates its administrator account and a one-time team invite code. Save that code and share it only with facility staff. Later staff accounts need that code. There are no default login credentials.
 
-- A Socket.IO mini-service (`mini-services/queue-service`, port `3003`) broadcasts `queue:update` on every mutation.
-- The UI subscribes via `io("/?XTransformPort=3003")` through the gateway and additionally polls every 10 s as a fallback ("Syncing every 10s").
-- Behind the gateway, mutations reach the service through an internal push endpoint on port `3004`.
+## Database
 
-## Getting started
+SQL migrations are stored in `database/migrations/`. Apply pending migrations with `npm run db:migrate`; the API also checks migrations during local development. For Docker-based PostgreSQL, copy `.env.example` to `.env`, set a strong password, and run `npm run db:compose:up`. The Docker database binds to localhost port 5433 and persists data in a named volume.
 
-```bash
-bun install
-bun run db:push        # create SQLite schema (db/custom.db)
-bun run dev            # Next.js on :3000 — seeds the demo day on first request
-cd mini-services/queue-service && bun run dev   # optional: live socket broadcasts
+Useful database commands:
+
+```sh
+npm run db:status
+npm run db:down
+npm run db:compose:status
+npm run db:compose:logs
 ```
 
-On first API request the database is **seeded** with a realistic demo day for Lusaka Central Hospital: 184 registrations, 42 waiting across six stations, the MC-015/018/019/022/024/025 scenario from the product mockup, a red-flag triage case (MC-020) and a lab-centrifuge bottleneck alert. `Hospital Flow Settings → Reset Demo Day` restores this state at any time.
+## API
 
-## Key APIs
+The API is mounted under `/api`. It provides server-side registration and login sessions, facility preferences and invite-code rotation, staff lookup, live dashboard aggregates, patient check-in, queue transitions and staff assignment, team messages, public-display-safe ticket data, and a PostgreSQL health check at `GET /api/health`.
 
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /api/dashboard` | KPIs, flow-map nodes, bottleneck alerts, live feed |
-| `GET /api/patients?stage=X` / `?scope=today` | Station queues / registration log |
-| `POST /api/patients` | Register a patient (auto ticket) |
-| `PATCH /api/patients/[id]` | Station transitions: `callNext`, `completeVitals`, `startConsult`, `endConsult`, `labProcess`, `reviewDone`, `dispense`, `setPriority` |
-| `GET /api/display` | TV board payload (now serving + up-next) |
-| `POST /api/actions` | Command actions: `fast-track`, `route-satellite`, `split-queue`, `overflow`, `reallocate`, `broadcast`, `escalate`, `resolve-alert` |
-| `GET /api/settings` · `PATCH` · `POST` | Flow settings, staff roster, demo reset |
-| `GET /api/audit` | Full audit trail |
-| `GET /api/report` | Daily operational report (CSV download) |
+Patient and facility queries are scoped to the signed-in staff member’s facility. Patient-facing queue responses include ticket numbers and queue state only, never names or clinical details. Passwords are stored as scrypt hashes, and the browser receives only an HTTP-only session cookie.
 
-## Stack
+## Build and start
 
-- **Next.js 16 (App Router) + TypeScript** — single-route SPA shell (`/`) with hash-based module switching (TV board gets its own `#display` screen)
-- **Tailwind CSS 4** with a Material Design 3 teal palette and the Plus Jakarta Sans / Inter / Manrope type ramp
-- **shadcn/ui** for overlays (dialogs, popovers, selects, toasts)
-- **Prisma + SQLite** — Patient, Vitals, Prescription, LabTest, Event, Staff, Setting models
-- **Socket.IO** mini-service for real-time queue broadcasts
+```sh
+npm run build
+npm start
+```
+
+Configure production database variables before starting the API. Apply database migrations as a release step with `npm run db:migrate`.
