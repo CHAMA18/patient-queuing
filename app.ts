@@ -1036,8 +1036,11 @@ function renderOperationsScreens(screen: StitchScreen, displayEnabled: boolean, 
 }
 
 function renderPatientDisplayDirectory(screen: StitchScreen): string {
-  const options = screens.filter((entry) => entry.category === "Patient-Facing Displays" && entry.slug !== "patient-display");
-  return `${pageHeading(screen)}<section class="panel display-directory-panel"><div class="panel-heading"><div><h2>Patient display options</h2><p>Choose a display to open its live patient-facing screen or controls.</p></div><span class="material-symbols-outlined panel-heading-icon" aria-hidden="true">connected_tv</span></div><div class="display-directory-list">${options.map((option) => `<a class="display-directory-link" href="${screenHref(option.slug)}" data-screen="${option.slug}"><span class="department-icon material-symbols-outlined" aria-hidden="true">${sidebarIcons[option.slug]}</span><span class="display-directory-copy"><strong>${escapeHtml(sidebarLabels[option.slug])}</strong><small>${escapeHtml(option.description)}</small></span><span class="material-symbols-outlined display-directory-arrow" aria-hidden="true">arrow_forward</span></a>`).join("")}</div></section>`;
+  const directoryCategories: StitchScreen["category"][] = ["Patient-Facing Displays", "Clinical Workstations"];
+  const options = directoryCategories.flatMap((category) =>
+    screens.filter((entry) => entry.category === category && entry.slug !== "patient-display"),
+  );
+  return `${pageHeading(screen)}<section class="panel display-directory-panel"><div class="panel-heading"><div><h2>Patient display options</h2><p>Choose a patient display or care team workstation to open its live screen or controls.</p></div><span class="material-symbols-outlined panel-heading-icon" aria-hidden="true">connected_tv</span></div><div class="display-directory-list">${options.map((option) => `<a class="display-directory-link" href="${screenHref(option.slug)}" data-screen="${option.slug}"><span class="department-icon material-symbols-outlined" aria-hidden="true">${sidebarIcons[option.slug]}</span><span class="display-directory-copy"><strong>${escapeHtml(sidebarLabels[option.slug])}</strong><small>${escapeHtml(option.description)}</small></span><span class="material-symbols-outlined display-directory-arrow" aria-hidden="true">arrow_forward</span></a>`).join("")}</div></section>`;
 }
 
 const publicDisplayMessages: Record<PublicDisplaySlug, { eyebrow: string; headline: string; body: string }> = {
